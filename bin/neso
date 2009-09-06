@@ -1,0 +1,218 @@
+#!/usr/bin/env python
+#This file is part of Tryton.  The COPYRIGHT file at the top level of
+#this repository contains the full copyright notices and license terms.
+import sys
+import os
+import logging
+import time
+import threading
+import gtk
+
+try:
+    DIR = os.path.abspath(os.path.normpath(os.path.join(__file__,
+        '..', '..', 'neso')))
+    if os.path.isdir(DIR):
+        sys.path.insert(0, os.path.dirname(DIR))
+except:
+    pass
+from neso.version import *
+
+try:
+    for i in ('tryton', 'trytond'):
+        DIR = os.path.abspath(os.path.normpath(os.path.join(__file__,
+            '..', '..', i, i)))
+        if os.path.isdir(DIR):
+            sys.path.insert(0, os.path.dirname(DIR))
+except:
+    try:
+        for i in ('tryton', 'trytond'):
+            # try for py2exe
+            DIR = os.path.join(os.path.abspath(os.path.normpath(
+                os.path.dirname(sys.argv[0]))), i, i)
+            if os.path.isdir(DIR):
+                sys.path.insert(0, os.path.dirname(DIR))
+    except:
+        pass
+
+if os.name == 'mac' or \
+        (hasattr(os, 'uname') and os.uname()[0] == 'Darwin'):
+    resources = os.path.join(os.path.dirname(sys.argv[0]), '..', 'Resources')
+    gtkrc = os.path.join(resources, 'gtkrc')
+    pixbuf_loader = os.path.join(resources, 'gdk-pixbuf.loaders')
+    pangorc = os.path.join(resources, 'pangorc')
+    if os.path.isdir(resources):
+        os.environ['GTK2_RC_FILES'] = gtkrc
+        os.environ['GTK_EXE_PREFIX'] = resources
+        os.environ['GTK_DATA_PREFIX'] = resources
+        os.environ['GDK_PIXBUF_MODULE_FILE'] = pixbuf_loader
+        os.environ['PANGO_RC_FILE'] = pangorc
+
+import tryton.client
+TrytonClient = tryton.client.TrytonClient()
+
+from trytond.config import CONFIG
+from tryton.config import get_home_dir
+
+DATA_DIR = os.path.join(get_home_dir(), '.neso')
+if not os.path.isdir(DATA_DIR):
+    os.mkdir(DATA_DIR, 0700)
+VERSION_DATA_DIR = os.path.join(DATA_DIR, VERSION.rsplit('.', 1)[0])
+if not os.path.isdir(VERSION_DATA_DIR):
+    os.mkdir(VERSION_DATA_DIR, 0700)
+
+CONFIG.options['netrpc'] = False
+CONFIG.options['xmlrpc'] = False
+CONFIG.options['webdav'] = False
+CONFIG.options['db_type'] = 'sqlite'
+CONFIG.options['data_path'] = VERSION_DATA_DIR
+
+for mod in sys.modules.keys():
+    if mod.startswith('trytond.') \
+            and not mod.startswith('trytond.config'):
+        del sys.modules[mod]
+
+from trytond.pool import Pool
+Pool.start()
+
+from trytond.protocols.dispatcher import dispatch
+from trytond.backend import Database
+
+import tryton.rpc as rpc
+
+def db_list(host, port):
+    Database._memory_database = None
+    return dispatch('127.0.0.1', 8070, 'local', None, None, None, 'common', 'db',
+            'list')
+
+rpc.db_list = db_list
+
+def db_exec(host, port, method, *args):
+    Database._memory_database = None
+    args = ('127.0.0.1', 8070, 'local', None, None, None, 'common', 'db', method) \
+            + args
+    return dispatch(*args)
+
+rpc.db_exec = db_exec
+
+def server_version(host, port):
+    return dispatch('127.0.0.1', 8070, 'local', None, None, None, 'common', None,
+            'version')
+rpc.server_version = server_version
+
+def login(username, password, host, port, database):
+    res = dispatch('127.0.0.1', 8070, 'local', database, username, password,
+            'common', 'db', 'login')
+    if not res:
+        rpc._USER = 0
+        rpc._SESSION = ''
+        return -2
+    rpc._USER = res[0]
+    rpc._USERNAME = username
+    rpc._SESSION = res[1]
+    rpc._DATABASE = database
+    rpc.context_reload()
+    return 1
+
+rpc.login = login
+
+def logout():
+    dispatch('127.0.0.1', 8070, 'local', rpc._DATABASE, rpc._USERNAME, rpc._SESSION,
+            'common', 'db', 'logout')
+    rpc._USER = 0
+    rpc._USERNAME = ''
+    rpc._SESSION = ''
+    rpc._DATABASE = ''
+    rpc._VIEW_CACHE = {}
+    rpc.SECURE = False
+
+rpc.logout = logout
+
+def _execute(blocking, *args):
+    logging.getLogger('rpc.request').info(repr((args)))
+    key = False
+    if len(args) >= 6 and args[1] == 'fields_view_get':
+        key = str(args)
+        if key in rpc._VIEW_CACHE and rpc._VIEW_CACHE[key][0]:
+            args = args[:]
+            args = args + (rpc._VIEW_CACHE[key][0],)
+    res = rpc._SEMAPHORE.acquire(blocking)
+    if not res:
+        return
+    try:
+        result = dispatch(*(('127.0.0.1', 8070, 'local', rpc._DATABASE,
+            rpc._USER, rpc._SESSION) + args))
+    finally:
+        rpc._SEMAPHORE.release()
+    if key:
+        if result is True and key in rpc._VIEW_CACHE:
+            result = rpc._VIEW_CACHE[key][1]
+        else:
+            rpc._VIEW_CACHE[key] = (result['md5'], result)
+    logging.getLogger('rpc.result').debug(repr(result))
+    return result
+
+rpc._execute = _execute
+
+class _SOCK(object):
+    hostname = 'localhost'
+    host = '127.0.0.1'
+    port = 8070
+
+rpc._SOCK = _SOCK()
+
+def cron():
+    while True:
+        for dbname in Pool.database_list():
+            pool = Pool(dbname)
+            if 'ir.cron' not in pool.object_name_list():
+                continue
+            cron_obj = pool.get('ir.cron')
+            thread = threading.Thread(
+                    target=cron_obj.pool_jobs,
+                    args=(dbname,), kwargs={})
+            thread.start()
+        time.sleep(60)
+thread = threading.Thread(target=cron)
+thread.start()
+
+from tryton.config import CONFIG as CLIENT_CONFIG
+CLIENT_CONFIG.__setitem__('login.host', False, config=False)
+CLIENT_CONFIG.__setitem__('login.server', 'localhost', config=False)
+CLIENT_CONFIG.__setitem__('login.port', '8070', config=False)
+
+from tryton.gui.window.dbcreate import DBCreate
+_DBCreate_run = DBCreate.run
+
+def DBCreate_run(self, parent):
+    self.entry_serverpasswd.set_text('admin')
+    self.event_show_button_create(self.dialog, None)
+    return _DBCreate_run(self, parent)
+
+DBCreate.run = DBCreate_run
+
+from tryton.gui.window.dbdumpdrop import DBBackupDrop
+_DBBackupDrop_run = DBBackupDrop.run
+
+def DBBackupDrop_run(self, parent):
+    self.entry_serverpasswd.set_text('admin')
+
+    liststore = gtk.ListStore(str)
+    self.combo_database.set_model(liststore)
+    self.refreshlist(None, self.combo_database, self.combo_database_label,
+            '127.0.0.1', 8070)
+    self.event_show_button_ok(self.dialog, None)
+    return _DBBackupDrop_run(self, parent)
+
+DBBackupDrop.run = DBBackupDrop_run
+
+from tryton.gui.window.dbrestore import DBRestore
+_DBRestore_run = DBRestore.run
+
+def DBRestore_run(self, parent):
+    self.entry_server_password.set_text('admin')
+    self.event_show_button_restore(self.dialog, None)
+    return _DBRestore_run(self, parent)
+
+DBRestore.run = DBRestore_run
+
+TrytonClient.run()
