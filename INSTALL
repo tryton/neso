@@ -4,7 +4,7 @@ Installing neso
 Prerequisites
 -------------
 
- * Python 2.4 or later (http://www.python.org/)
+ * Python 2.5 or later (http://www.python.org/)
  * tryton 1.4 or later (http://www.tryton.org/)
  * trytond 1.4 or later (http://www.tryton.org/)
 
