@@ -195,6 +195,7 @@ _DBBackupDrop_run = DBBackupDrop.run
 
 def DBBackupDrop_run(self, parent):
     self.entry_serverpasswd.set_text('admin')
+    self.entry_server_connection.set_text('127.0.0.1:8070')
 
     liststore = gtk.ListStore(str)
     self.combo_database.set_model(liststore)
