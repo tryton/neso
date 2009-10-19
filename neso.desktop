@@ -2,8 +2,10 @@
 Version=1.0
 Type=Application
 Name=Neso
-GenericName=Client/Server for the Tryton Application Platform
+GenericName=Standalone Client/Server for the Tryton Application Platform
+GenericName[de]=Autonomer Client/Server für die Tryton Application Platform
 Comment=Run Tryton
+Comment[de]=Tryton starten
 Exec=neso
 Icon=neso-icon
 Terminal=false

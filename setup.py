@@ -52,6 +52,7 @@ if os.name == 'nt':
                 'pydot',
                 'BeautifulSoup',
                 'vobject',
+                'ldap',
                 'pkg_resources',
             ],
         }
@@ -96,7 +97,7 @@ if os.name == 'nt':
         for directory in os.environ['PATH'].split(';'):
             if not os.path.isdir(directory):
                 continue
-            for file in ('gtk-demo.exe',):
+            for file in ('gtk-demo.exe', 'gdk-pixbuf-query-loaders.exe'):
                 if os.path.isfile(os.path.join(directory, file)):
                     return os.path.dirname(directory)
         return None
@@ -129,11 +130,14 @@ if os.name == 'nt':
                 shutil.rmtree(os.path.join(dist_dir, i))
             shutil.copytree(os.path.join(os.path.dirname(__file__), i),
                     os.path.join(dist_dir, i))
-            if os.path.isdir(os.path.join(dist_dir, i, '.hg')):
-                shutil.rmtree(os.path.join(dist_dir, i, '.hg'))
-            for j in ('.hgtags', '.hgignore', 'dist', i + '.egg-info'):
+            for j in ('.hg', 'dist', 'build', i + '.egg-info'):
+                if os.path.isdir(os.path.join(dist_dir, i, j)):
+                    shutil.rmtree(os.path.join(dist_dir, i, j))
+            for j in ('.hgtags', '.hgignore'):
                 if os.path.isfile(os.path.join(dist_dir, i, j)):
                     os.remove(os.path.join(dist_dir, i, j))
+            for file in glob.iglob(os.path.join(dist_dir, i, '*.exe')):
+                os.remove(file)
             for file in findFiles(os.path.join(dist_dir, i), '*.py'):
                 if file.endswith('__tryton__.py'):
                     continue
@@ -143,16 +147,36 @@ if os.name == 'nt':
                 compile(file, None, file[len(dist_dir) + len(os.sep):] + \
                         (__debug__ and 'c' or 'o'), True)
                 os.remove(file)
+        for j in ('.hg', 'dist', 'build', i + '.egg-info'):
+            for dir in glob.iglob(os.path.join(dist_dir, 'trytond', 'trytond',
+                    'modules', '*', j)):
+                shutil.rmtree(dir)
+        for j in ('.hgtags', '.hgignore'):
+            for file in glob.iglob(os.path.join(dist_dir, 'trytond', 'trytond',
+                    'modules', '*', j)):
+                os.remove(file)
 
         if os.path.isdir(os.path.join(dist_dir, 'etc')):
             shutil.rmtree(os.path.join(dist_dir, 'etc'))
         shutil.copytree(os.path.join(gtk_dir, 'etc'),
             os.path.join(dist_dir, 'etc'))
 
+        from subprocess import Popen, PIPE
+        query_loaders = Popen(os.path.join(gtk_dir,'bin','gdk-pixbuf-query-loaders'),
+            stdout=PIPE).stdout.read()
+        query_loaders = query_loaders.replace(gtk_dir.replace(os.sep, '/') + '/', '')
+        loaders = open(os.path.join(dist_dir, 'etc', 'gtk-2.0', 'gdk-pixbuf.loaders'), 'w')
+        loaders.writelines([line + "\n" for line in query_loaders.split(os.linesep)])
+        loaders.close()
+
         if os.path.isdir(os.path.join(dist_dir, 'lib')):
             shutil.rmtree(os.path.join(dist_dir, 'lib'))
         shutil.copytree(os.path.join(gtk_dir, 'lib'),
             os.path.join(dist_dir, 'lib'))
+
+        for file in glob.iglob(os.path.join(gtk_dir, 'bin', '*.dll')):
+            if os.path.isfile(file):
+                shutil.copy(file, dist_dir)
 
         for lang in ('de', 'es', 'fr'):
             if os.path.isdir(os.path.join(dist_dir, 'share', 'locale', lang)):
