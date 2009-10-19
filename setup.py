@@ -128,12 +128,14 @@ if os.name == 'nt':
                 shutil.rmtree(os.path.join(dist_dir, i))
             shutil.copytree(os.path.join(os.path.dirname(__file__), i),
                     os.path.join(dist_dir, i))
-            for j in ('.hg', 'dist', i + '.egg-info'):
+            for j in ('.hg', 'dist', 'build', i + '.egg-info'):
                 if os.path.isdir(os.path.join(dist_dir, i, j)):
                     shutil.rmtree(os.path.join(dist_dir, i, j))
             for j in ('.hgtags', '.hgignore'):
                 if os.path.isfile(os.path.join(dist_dir, i, j)):
                     os.remove(os.path.join(dist_dir, i, j))
+            for file in glog.iglob(os.path.join(dist_dir, i, '*.exe')):
+                os.remove(file)
             for file in findFiles(os.path.join(dist_dir, i), '*.py'):
                 if file.endswith('__tryton__.py'):
                     continue
@@ -143,7 +145,7 @@ if os.name == 'nt':
                 compile(file, None, file[len(dist_dir) + len(os.sep):] + \
                         (__debug__ and 'c' or 'o'), True)
                 os.remove(file)
-        for j in ('.hg', 'dist', i + '.egg-info'):
+        for j in ('.hg', 'dist', 'build', i + '.egg-info'):
             for dir in glob.iglob(os.path.join(dist_dir, 'trytond', 'trytond',
                     'modules', '*', j)):
                 shutil.rmtree(dir)
