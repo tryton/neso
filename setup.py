@@ -63,7 +63,7 @@ execfile(os.path.join('neso', 'version.py'))
 
 dist = setup(name=PACKAGE,
     version=VERSION,
-    description='Tryton client/server',
+    description='Standalone Client/Server for the Tryton Application Platform',
     author='B2CK',
     author_email='info@b2ck.com',
     url=WEBSITE,
