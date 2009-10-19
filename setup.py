@@ -134,7 +134,7 @@ if os.name == 'nt':
             for j in ('.hgtags', '.hgignore'):
                 if os.path.isfile(os.path.join(dist_dir, i, j)):
                     os.remove(os.path.join(dist_dir, i, j))
-            for file in glog.iglob(os.path.join(dist_dir, i, '*.exe')):
+            for file in glob.iglob(os.path.join(dist_dir, i, '*.exe')):
                 os.remove(file)
             for file in findFiles(os.path.join(dist_dir, i), '*.py'):
                 if file.endswith('__tryton__.py'):
