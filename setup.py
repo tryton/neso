@@ -29,6 +29,7 @@ if os.name == 'nt':
             'packages': [
                 'encodings',
                 'gtk',
+                'pygtk',
                 'pytz',
                 'atk',
                 'pango',
@@ -51,6 +52,7 @@ if os.name == 'nt':
                 'pydot',
                 'BeautifulSoup',
                 'vobject',
+                'pkg_resources',
             ],
         }
     }
