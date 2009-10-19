@@ -51,6 +51,7 @@ if os.name == 'nt':
                 'pydot',
                 'BeautifulSoup',
                 'vobject',
+                'ldap',
             ],
         }
     }
