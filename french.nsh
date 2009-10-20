@@ -8,10 +8,10 @@
 !endif
 !define CURLANG ${LANG_FRENCH}
 
-LangString LicenseText ${CURLANG} "Neso est publiÃ© sous la GNU General Public License comme publiÃ©e par la Free Software Foundation, soit la version 3 de la License, ou (Ã  votre choix) toute version ultÃ©rieure. S'il vous plaÃ®t lisez attentivement la license. Cliquez sur Suivant pour continuer."
+LangString LicenseText ${CURLANG} "Neso est publié sous la GNU General Public License comme publiée par la Free Software Foundation, soit la version 3 de la License, ou (à votre choix) toute version ultérieure. S'il vous plaît lisez attentivement la license. Cliquez sur Suivant pour continuer."
 LangString LicenseNext ${CURLANG} "&Suivant"
-LangString PreviousInstall ${CURLANG} "Veuillez dÃ©sinstaller la prÃ©cÃ©dente installation de Neso"
+LangString PreviousInstall ${CURLANG} "Veuillez désinstaller la précédente installation de Neso"
 LangString SecNesoName ${CURLANG} "Neso"
 LangString SecNesoDesc ${CURLANG} "Installe neso.exe et d'autres fichiers requis"
-LangString SecStartMenuName ${CURLANG} "Raccourcis dans le menu DÃ©marrer et sur le bureau"
-LangString SecStartMenuDesc ${CURLANG} "CrÃ©Ã© les raccourcis dans le menu DÃ©marrer et sur le bureau"
+LangString SecStartMenuName ${CURLANG} "Raccourcis dans le menu Démarrer et sur le bureau"
+LangString SecStartMenuDesc ${CURLANG} "Créé les raccourcis dans le menu Démarrer et sur le bureau"
