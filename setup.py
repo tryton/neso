@@ -54,6 +54,7 @@ if os.name == 'nt':
                 'vobject',
                 'ldap',
                 'pkg_resources',
+                'vatnumber',
             ],
         }
     }
