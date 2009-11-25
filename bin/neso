@@ -15,6 +15,12 @@ try:
         sys.path.insert(0, os.path.dirname(DIR))
 except:
     pass
+
+# True only if running as a py2exe app
+if os.name == 'nt' and hasattr(sys, "frozen"):
+    sys.stdout = open(os.devnull, 'w')
+    sys.stderr = open(os.devnull, 'w')
+
 from neso.version import *
 
 try:
