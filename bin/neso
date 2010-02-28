@@ -122,8 +122,9 @@ def login(username, password, host, port, database):
 rpc.login = login
 
 def logout():
-    dispatch('127.0.0.1', 8070, 'local', rpc._DATABASE, rpc._USERNAME, rpc._SESSION,
-            'common', 'db', 'logout')
+    if rpc._SOCK and rpc._USER:
+        dispatch('127.0.0.1', 8070, 'local', rpc._DATABASE, rpc._USERNAME,
+                rpc._SESSION, 'common', 'db', 'logout')
     rpc._USER = 0
     rpc._USERNAME = ''
     rpc._SESSION = ''
