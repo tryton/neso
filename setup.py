@@ -39,7 +39,7 @@ if os.name == 'nt':
                 'xmlrpclib',
                 'xml',
                 'decimal',
-                'mx.DateTime',
+                'dateutil',
                 'logging.handlers',
                 'psycopg2',
                 'zipfile',
