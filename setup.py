@@ -61,6 +61,9 @@ if os.name == 'nt':
     args['zipfile'] = 'library.zip'
 
 execfile(os.path.join('neso', 'version.py'))
+major_version, minor_version, _ = VERSION.split('.', 2)
+major_version = int(major_version)
+minor_version = int(minor_version)
 
 dist = setup(name=PACKAGE,
     version=VERSION,
@@ -87,8 +90,10 @@ dist = setup(name=PACKAGE,
     ],
     license='GPL-3',
     install_requires=[
-        'tryton >= 1.4.0',
-        'trytond >= 1.4.0',
+        'tryton >= %s.%s, < %s.%s' % (major_version, minor_version,
+            major_version, minor_version),
+        'trytond >= %s.%s, < %s.%s' % (major_version, minor_version,
+            major_version, minor_version + 1),
     ],
     **args
 )
