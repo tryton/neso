@@ -22,6 +22,9 @@ if os.name == 'nt':
         'script': os.path.join('bin', 'neso'),
         'icon_resources': [(1, os.path.join('share', 'pixmaps', 'neso', 'neso.ico'))],
     }]
+    json = ['json']
+    if sys.version_info < (2, 6):
+        json = ['simplejson']
     args['options'] = {
         'py2exe': {
             'optimize': 0,
@@ -55,7 +58,8 @@ if os.name == 'nt':
                 'ldap',
                 'pkg_resources',
                 'vatnumber',
-            ],
+                'email',
+            ] + json,
         }
     }
     args['zipfile'] = 'library.zip'
