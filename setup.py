@@ -63,6 +63,37 @@ if os.name == 'nt':
         }
     }
     args['zipfile'] = 'library.zip'
+elif os.name == 'mac' \
+        or (hasattr(os, 'uname') and os.uname()[0] == 'Darwin'):
+    import py2app
+    from modulegraph.find_modules import PY_SUFFIXES
+    PY_SUFFIXES.append('')
+    args['app'] = [os.path.join('bin', 'neso')]
+    json = 'json'
+    if sys.version_info < (2, 6):
+        json = 'simplejson'
+    args['options'] = {
+        'py2app': {
+            'argv_emulation': True,
+            'includes': ('pygtk, gtk, glib, cairo, pango, pangocairo, atk, '
+                    'gobject, gio, gtk.keysyms, pkg_resources, ConfigParser, '
+                    'xmlrpclib, decimal, uuid, '
+                    'dateutil, psycopg2, zipfile, sqlite3, '
+                    'csv, pydoc, pydot, BeautifulSoup, '
+                    'vobject, vatnumber, email, cPickle, sha, '
+                    + json),
+            'packages': ('xml, logging, lxml, genshi, DAV, pytz, email, '
+                    'relatorio'),
+            'excludes': 'tryton, trytond',
+            'frameworks': 'librsvg-2.2.dylib',
+            'plist': {
+                'CFBundleIdentifier': 'org.tryton.neso',
+            },
+            'iconfile': os.path.join('share', 'pixmaps', 'neso',
+                'neso.icns'),
+        },
+    }
+
 
 execfile(os.path.join('neso', 'version.py'))
 major_version, minor_version, _ = VERSION.split('.', 2)
@@ -102,6 +133,48 @@ dist = setup(name=PACKAGE,
     **args
 )
 
+def findFiles(topDir, pattern):
+    import fnmatch
+    for dirpath, dirnames, filenames in os.walk(topDir):
+        for filename in filenames:
+            if fnmatch.fnmatch(filename, pattern):
+                yield os.path.join(dirpath, filename)
+
+def copy_trytons(dist_dir):
+   from py_compile import compile
+   for i in ('tryton', 'trytond'):
+       if os.path.isdir(os.path.join(dist_dir, i)):
+           shutil.rmtree(os.path.join(dist_dir, i))
+       shutil.copytree(os.path.join(os.path.dirname(__file__), i),
+               os.path.join(dist_dir, i))
+       for j in ('.hg', 'dist', 'build', i + '.egg-info'):
+           if os.path.isdir(os.path.join(dist_dir, i, j)):
+               shutil.rmtree(os.path.join(dist_dir, i, j))
+       for j in ('.hgtags', '.hgignore'):
+           if os.path.isfile(os.path.join(dist_dir, i, j)):
+               os.remove(os.path.join(dist_dir, i, j))
+       for file in glob.iglob(os.path.join(dist_dir, i, '*.exe')):
+           os.remove(file)
+       for file in glob.iglob(os.path.join(dist_dir, i, '*.dmg')):
+           os.remove(file)
+       for file in findFiles(os.path.join(dist_dir, i), '*.py'):
+           if file.endswith('__tryton__.py'):
+               continue
+           print "byte-compiling %s to %s" % (file,
+                   file[len(dist_dir) + len(os.sep):] + \
+                   (__debug__ and 'c' or 'o'))
+           compile(file, None, file[len(dist_dir) + len(os.sep):] + \
+                   (__debug__ and 'c' or 'o'), True)
+           os.remove(file)
+   for j in ('.hg', 'dist', 'build', i + '.egg-info'):
+       for dir in glob.iglob(os.path.join(dist_dir, 'trytond', 'trytond',
+               'modules', '*', j)):
+           shutil.rmtree(dir)
+   for j in ('.hgtags', '.hgignore'):
+       for file in glob.iglob(os.path.join(dist_dir, 'trytond', 'trytond',
+               'modules', '*', j)):
+           os.remove(file)
+
 if os.name == 'nt':
     def find_gtk_dir():
         for directory in os.environ['PATH'].split(';'):
@@ -120,13 +193,6 @@ if os.name == 'nt':
             if os.path.isfile(path):
                 return path
         return None
-
-    import fnmatch
-    def findFiles(topDir, pattern):
-        for dirpath, dirnames, filenames in os.walk(topDir):
-            for filename in filenames:
-                if fnmatch.fnmatch(filename, pattern):
-                    yield os.path.join(dirpath, filename)
 
     if 'py2exe' in dist.commands:
         import shutil
@@ -152,37 +218,7 @@ if os.name == 'nt':
                 z.write(os.path.join(absdir, f), os.path.join(zip_dir, f))
         z.close()
 
-        from py_compile import compile
-        for i in ('tryton', 'trytond'):
-            if os.path.isdir(os.path.join(dist_dir, i)):
-                shutil.rmtree(os.path.join(dist_dir, i))
-            shutil.copytree(os.path.join(os.path.dirname(__file__), i),
-                    os.path.join(dist_dir, i))
-            for j in ('.hg', 'dist', 'build', i + '.egg-info'):
-                if os.path.isdir(os.path.join(dist_dir, i, j)):
-                    shutil.rmtree(os.path.join(dist_dir, i, j))
-            for j in ('.hgtags', '.hgignore'):
-                if os.path.isfile(os.path.join(dist_dir, i, j)):
-                    os.remove(os.path.join(dist_dir, i, j))
-            for file in glob.iglob(os.path.join(dist_dir, i, '*.exe')):
-                os.remove(file)
-            for file in findFiles(os.path.join(dist_dir, i), '*.py'):
-                if file.endswith('__tryton__.py'):
-                    continue
-                print "byte-compiling %s to %s" % (file,
-                        file[len(dist_dir) + len(os.sep):] + \
-                        (__debug__ and 'c' or 'o'))
-                compile(file, None, file[len(dist_dir) + len(os.sep):] + \
-                        (__debug__ and 'c' or 'o'), True)
-                os.remove(file)
-        for j in ('.hg', 'dist', 'build', i + '.egg-info'):
-            for dir in glob.iglob(os.path.join(dist_dir, 'trytond', 'trytond',
-                    'modules', '*', j)):
-                shutil.rmtree(dir)
-        for j in ('.hgtags', '.hgignore'):
-            for file in glob.iglob(os.path.join(dist_dir, 'trytond', 'trytond',
-                    'modules', '*', j)):
-                os.remove(file)
+        copy_trytons(dist_dir)
 
         if os.path.isdir(os.path.join(dist_dir, 'etc')):
             shutil.rmtree(os.path.join(dist_dir, 'etc'))
@@ -223,3 +259,112 @@ if os.name == 'nt':
             Popen([makensis, "/DVERSION=" + VERSION,
                 str(os.path.join(os.path.dirname(__file__),
                     'setup.nsi'))]).wait()
+elif os.name == 'mac' \
+        or (hasattr(os, 'uname') and os.uname()[0] == 'Darwin'):
+    def find_gtk_dir():
+        for directory in os.environ['PATH'].split(':'):
+            if not os.path.isdir(directory):
+                continue
+            for file in ('gtk-demo',):
+                if os.path.isfile(os.path.join(directory, file)):
+                    return os.path.dirname(directory)
+        return None
+
+    if 'py2app' in dist.commands:
+        import shutil
+        from subprocess import Popen, PIPE
+        from itertools import chain
+        from glob import iglob
+        gtk_dir = find_gtk_dir()
+        gtk_binary_version = Popen(['pkg-config', '--variable=gtk_binary_version',
+            'gtk+-2.0'], stdout=PIPE).stdout.read().strip()
+
+        dist_dir = dist.command_obj['py2app'].dist_dir
+        resources_dir = os.path.join(dist_dir, 'neso.app', 'Contents', 'Resources')
+
+        copy_trytons(resources_dir)
+
+        gtk_2_dist_dir = os.path.join(resources_dir, 'lib', 'gtk-2.0')
+        pango_dist_dir = os.path.join(resources_dir, 'lib', 'pango')
+
+        if os.path.isdir(pango_dist_dir):
+            shutil.rmtree(pango_dist_dir)
+        shutil.copytree(os.path.join(gtk_dir, 'lib', 'pango'), pango_dist_dir)
+
+        query_pango = Popen(os.path.join(gtk_dir, 'bin', 'pango-querymodules'),
+                stdout=PIPE).stdout.read()
+        query_pango = query_pango.replace(gtk_dir, '@executable_path/../Resources')
+        pango_modules = open(os.path.join(resources_dir, 'pango.modules'), 'w')
+        pango_modules.write(query_pango)
+        pango_modules.close()
+
+        pangorc = open(os.path.join(resources_dir, 'pangorc'), 'w')
+        pangorc.write('[Pango]\n')
+        pangorc.write('ModuleFiles=./pango.modules\n')
+        pangorc.close()
+
+        if os.path.isdir(os.path.join(gtk_2_dist_dir, gtk_binary_version, 'loaders')):
+            shutil.rmtree(os.path.join(gtk_2_dist_dir, gtk_binary_version, 'loaders'))
+        shutil.copytree(os.path.join(gtk_dir, 'lib', 'gtk-2.0', gtk_binary_version,
+                'loaders'), os.path.join(gtk_2_dist_dir, gtk_binary_version, 'loaders'))
+        if not os.path.isdir(os.path.join(gtk_2_dist_dir, gtk_binary_version, 'engines')):
+            os.makedirs(os.path.join(gtk_2_dist_dir, gtk_binary_version, 'engines'))
+        shutil.copyfile(os.path.join(gtk_dir, 'lib', 'gtk-2.0', gtk_binary_version,
+                'engines', 'libclearlooks.so'), os.path.join(gtk_2_dist_dir,
+                gtk_binary_version, 'engines', 'libclearlooks.so'))
+
+        query_loaders = Popen(os.path.join(gtk_dir,'bin','gdk-pixbuf-query-loaders'),
+                stdout=PIPE).stdout.read()
+        query_loaders = query_loaders.replace(gtk_dir, '@executable_path/../Resources')
+        loaders = open(os.path.join(resources_dir, 'gdk-pixbuf.loaders'), 'w')
+        loaders.write(query_loaders)
+        loaders.close()
+
+        if os.path.isdir(os.path.join(gtk_2_dist_dir, gtk_binary_version, 'immodules')):
+            shutil.rmtree(os.path.join(gtk_2_dist_dir, gtk_binary_version, 'immodules'))
+        shutil.copytree(os.path.join(gtk_dir, 'lib', 'gtk-2.0', gtk_binary_version,
+            'immodules'), os.path.join(gtk_2_dist_dir, gtk_binary_version, 'immodules'))
+
+        query_immodules = Popen(os.path.join(gtk_dir, 'bin', 'gtk-query-immodules-2.0'),
+                stdout=PIPE).stdout.read()
+        query_immodules = query_immodules.replace(gtk_dir, '@executable_path/../Resources')
+        immodules = open(os.path.join(resources_dir, 'gtk.immodules'), 'w')
+        immodules.write(query_immodules)
+        immodules.close()
+
+        shutil.copy(os.path.join(gtk_dir, 'share', 'themes', 'Clearlooks',
+            'gtk-2.0', 'gtkrc'), os.path.join(resources_dir, 'gtkrc'))
+
+        for lang in ('de', 'es', 'fr', 'ru'):
+            if os.path.isdir(os.path.join(resources_dir, 'share', 'locale', lang)):
+                shutil.rmtree(os.path.join(resources_dir, 'share', 'locale', lang))
+            shutil.copytree(os.path.join(gtk_dir, 'share', 'locale', lang),
+                os.path.join(resources_dir, 'share', 'locale', lang))
+
+        # fix pathes within shared libraries
+        for library in chain(
+                iglob(os.path.join(gtk_2_dist_dir, gtk_binary_version, 'loaders', '*.so')),
+                iglob(os.path.join(gtk_2_dist_dir, gtk_binary_version, 'engines', '*.so')),
+                iglob(os.path.join(gtk_2_dist_dir, gtk_binary_version, 'immodules', '*.so')),
+                iglob(os.path.join(pango_dist_dir,'*','modules','*.so'))):
+            libs = [lib.split('(')[0].strip()
+                    for lib in Popen(['otool', '-L', library],
+                            stdout=PIPE).communicate()[0].splitlines()
+                    if 'compatibility' in lib]
+            libs = dict(((lib, None) for lib in libs if gtk_dir in lib))
+            for lib in libs.keys():
+                fixed = lib.replace(gtk_dir + '/lib',
+                        '@executable_path/../Frameworks')
+                Popen(['install_name_tool', '-change', lib, fixed,
+                    library]).wait()
+
+        for file in ('CHANGELOG', 'COPYRIGHT', 'LICENSE', 'README'):
+            shutil.copyfile(os.path.join(os.path.dirname(__file__), file),
+                os.path.join(dist_dir, file + '.txt'))
+
+        dmg_file = os.path.join(os.path.dirname(__file__), 'neso-' + VERSION
+                + '.dmg')
+        if os.path.isfile(dmg_file):
+            os.remove(dmg_file)
+        Popen(['hdiutil', 'create', dmg_file, '-volname', '"Neso ' +
+            VERSION + '"', '-fs', 'HFS+', '-srcfolder', dist_dir]).wait()

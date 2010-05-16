@@ -6,7 +6,6 @@ import os
 import logging
 import time
 import threading
-import gtk
 
 try:
     DIR = os.path.abspath(os.path.normpath(os.path.join(__file__,
@@ -21,37 +20,44 @@ if os.name == 'nt' and hasattr(sys, "frozen"):
     sys.stdout = open(os.devnull, 'w')
     sys.stderr = open(os.devnull, 'w')
 
-from neso.version import *
-
-try:
-    for i in ('tryton', 'trytond'):
-        DIR = os.path.abspath(os.path.normpath(os.path.join(__file__,
-            '..', '..', i, i)))
-        if os.path.isdir(DIR):
-            sys.path.insert(0, os.path.dirname(DIR))
-except:
-    try:
-        for i in ('tryton', 'trytond'):
-            # try for py2exe
-            DIR = os.path.join(os.path.abspath(os.path.normpath(
-                os.path.dirname(sys.argv[0]))), i, i)
-            if os.path.isdir(DIR):
-                sys.path.insert(0, os.path.dirname(DIR))
-    except:
-        pass
-
 if os.name == 'mac' or \
         (hasattr(os, 'uname') and os.uname()[0] == 'Darwin'):
     resources = os.path.join(os.path.dirname(sys.argv[0]), '..', 'Resources')
     gtkrc = os.path.join(resources, 'gtkrc')
     pixbuf_loader = os.path.join(resources, 'gdk-pixbuf.loaders')
     pangorc = os.path.join(resources, 'pangorc')
+    immodules = os.path.join(resources, 'gtk.immodules')
     if os.path.isdir(resources):
         os.environ['GTK2_RC_FILES'] = gtkrc
         os.environ['GTK_EXE_PREFIX'] = resources
         os.environ['GTK_DATA_PREFIX'] = resources
         os.environ['GDK_PIXBUF_MODULE_FILE'] = pixbuf_loader
         os.environ['PANGO_RC_FILE'] = pangorc
+        os.environ['GTK_IM_MODULE_FILE'] = immodules
+
+import gtk
+from neso.version import *
+
+for i in ('tryton', 'trytond'):
+    try:
+        DIR = os.path.abspath(os.path.normpath(os.path.join(__file__,
+            '..', '..', i, i)))
+        if os.path.isdir(DIR):
+            sys.path.insert(0, os.path.dirname(DIR))
+            continue
+    except: # Exception with py2exe
+        pass
+    # try for py2exe
+    DIR = os.path.join(os.path.abspath(os.path.normpath(
+        os.path.dirname(sys.argv[0]))), i, i)
+    if os.path.isdir(DIR):
+        sys.path.insert(0, os.path.dirname(DIR))
+        continue
+    # try for py2app
+    DIR = os.path.join(os.path.abspath(os.path.normpath(
+        os.path.dirname(sys.argv[0]))), '..', 'Resources', i, i)
+    if os.path.isdir(DIR):
+        sys.path.insert(0, os.path.dirname(DIR))
 
 import tryton.client
 TrytonClient = tryton.client.TrytonClient()
