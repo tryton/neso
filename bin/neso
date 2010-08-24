@@ -173,8 +173,9 @@ class _SOCK(object):
 
 rpc._SOCK = _SOCK()
 
+CRON_RUNNING = True
 def cron():
-    while True:
+    while CRON_RUNNING:
         for dbname in Pool.database_list():
             pool = Pool(dbname)
             if 'ir.cron' not in pool.object_name_list():
@@ -184,7 +185,10 @@ def cron():
                     target=cron_obj.pool_jobs,
                     args=(dbname,), kwargs={})
             thread.start()
-        time.sleep(60)
+        for i in xrange(60):
+            time.sleep(1)
+            if not CRON_RUNNING:
+                break
 thread = threading.Thread(target=cron)
 thread.start()
 
@@ -230,4 +234,9 @@ def DBRestore_run(self, parent):
 DBRestore.run = DBRestore_run
 
 TrytonClient.run()
+CRON_RUNNING = False
+for thread in threading.enumerate():
+    if thread == threading.currentThread():
+        continue
+    thread.join()
 sys.exit()
