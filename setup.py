@@ -58,6 +58,7 @@ if os.name == 'nt':
                 'ldap',
                 'pkg_resources',
                 'vatnumber',
+                'suds',
                 'email',
             ] + json,
         }
@@ -80,7 +81,7 @@ elif os.name == 'mac' \
                     'xmlrpclib, decimal, uuid, '
                     'dateutil, psycopg2, zipfile, sqlite3, '
                     'csv, pydoc, pydot, BeautifulSoup, '
-                    'vobject, vatnumber, email, cPickle, sha, '
+                    'vobject, vatnumber, suds, email, cPickle, sha, '
                     + json),
             'packages': ('xml, logging, lxml, genshi, DAV, pytz, email, '
                     'relatorio'),
