@@ -65,9 +65,12 @@ TrytonClient = tryton.client.TrytonClient()
 from trytond.config import CONFIG
 from tryton.config import get_home_dir
 
-DATA_DIR = os.path.join(get_home_dir(), '.neso')
+DATA_DIR = os.path.join(os.path.abspath(os.path.normpath(
+    os.path.dirname(sys.argv[0]))), '.neso')
 if not os.path.isdir(DATA_DIR):
-    os.mkdir(DATA_DIR, 0700)
+    DATA_DIR = os.path.join(get_home_dir(), '.neso')
+    if not os.path.isdir(DATA_DIR):
+        os.mkdir(DATA_DIR, 0700)
 VERSION_DATA_DIR = os.path.join(DATA_DIR, VERSION.rsplit('.', 1)[0])
 if not os.path.isdir(VERSION_DATA_DIR):
     os.mkdir(VERSION_DATA_DIR, 0700)
