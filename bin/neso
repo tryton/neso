@@ -238,8 +238,5 @@ DBRestore.run = DBRestore_run
 
 TrytonClient.run()
 CRON_RUNNING = False
-for thread in threading.enumerate():
-    if thread == threading.currentThread():
-        continue
-    thread.join()
-sys.exit()
+thread.join()
+sys.exit(0)
