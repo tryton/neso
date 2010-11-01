@@ -1,3 +1,5 @@
+Version 1.8.0 - 2010-11-01
+* Bug fixes (see mercurial logs for details)
 * Add test for a .neso data directory in neso directory
 
 Version 1.6.0 - 2010-05-15
