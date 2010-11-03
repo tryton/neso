@@ -60,6 +60,7 @@ if os.name == 'nt':
                 'vatnumber',
                 'suds',
                 'email',
+                'contextlib',
             ] + json,
         }
     }
@@ -82,6 +83,7 @@ elif os.name == 'mac' \
                     'dateutil, psycopg2, zipfile, sqlite3, '
                     'csv, pydoc, pydot, BeautifulSoup, '
                     'vobject, vatnumber, suds, email, cPickle, sha, '
+                    'contextlib, gtk_osxapplication, ldap, '
                     + json),
             'packages': ('xml, logging, lxml, genshi, DAV, pytz, email, '
                     'relatorio'),
@@ -89,6 +91,7 @@ elif os.name == 'mac' \
             'frameworks': 'librsvg-2.2.dylib',
             'plist': {
                 'CFBundleIdentifier': 'org.tryton.neso',
+                'CFBundleName': 'Neso',
             },
             'iconfile': os.path.join('share', 'pixmaps', 'neso',
                 'neso.icns'),
@@ -367,5 +370,5 @@ elif os.name == 'mac' \
                 + '.dmg')
         if os.path.isfile(dmg_file):
             os.remove(dmg_file)
-        Popen(['hdiutil', 'create', dmg_file, '-volname', '"Neso ' +
-            VERSION + '"', '-fs', 'HFS+', '-srcfolder', dist_dir]).wait()
+        Popen(['hdiutil', 'create', dmg_file, '-volname', 'Neso ' +
+            VERSION, '-fs', 'HFS+', '-srcfolder', dist_dir]).wait()
