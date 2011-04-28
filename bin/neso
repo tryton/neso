@@ -70,7 +70,8 @@ from tryton.config import get_home_dir
 DATA_DIR = os.path.join(os.path.abspath(os.path.normpath(
     os.path.dirname(sys.argv[0]))), '.neso')
 if not os.path.isdir(DATA_DIR):
-    DATA_DIR = os.path.join(get_home_dir(), '.neso')
+    DATA_DIR = os.path.join(unicode(get_home_dir(),
+        sys.getfilesystemencoding()), '.neso')
     if not os.path.isdir(DATA_DIR):
         os.mkdir(DATA_DIR, 0700)
 VERSION_DATA_DIR = os.path.join(DATA_DIR, VERSION.rsplit('.', 1)[0])
