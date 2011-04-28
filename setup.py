@@ -53,12 +53,12 @@ if os.name == 'nt':
                 'pydot',
                 'BeautifulSoup',
                 'vobject',
-                'ldap',
                 'pkg_resources',
                 'vatnumber',
                 'suds',
                 'email',
                 'contextlib',
+                'gio',
             ] + json,
         }
     }
