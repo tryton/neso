@@ -7,16 +7,14 @@ import os
 import sys
 import glob
 
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
 args = {}
+data_files = []
 
 if os.name == 'nt':
     import py2exe
-    origIsSystemDLL = py2exe.build_exe.isSystemDLL
-    def isSystemDLL(pathname):
-        if os.path.basename(pathname).lower() in ("msvcp71.dll", "dwmapi.dll"):
-            return 0
-        return origIsSystemDLL(pathname)
-    py2exe.build_exe.isSystemDLL = isSystemDLL
 
     args['windows'] = [{
         'script': os.path.join('bin', 'neso'),
@@ -65,6 +63,14 @@ if os.name == 'nt':
         }
     }
     args['zipfile'] = 'library.zip'
+
+    if sys.version_info < (2, 6):
+        data_files.append(('', ['msvp71.dll']))
+    else:
+        data_files.append(('', ['msvcr90.dll', 'msvcp90.dll', 'msvcm90.dll']))
+        manifest = read('Microsoft.VC90.CRT.manifest')
+        args['windows'][0]['other_resources'] = [(24, 1, manifest)]
+
 elif os.name == 'mac' \
         or (hasattr(os, 'uname') and os.uname()[0] == 'Darwin'):
     import py2app
@@ -113,6 +119,7 @@ dist = setup(name=PACKAGE,
     download_url='http://downloads.tryton.org/' + \
             VERSION.rsplit('.', 1)[0] + '/',
     packages=find_packages(),
+    data_files=data_files,
     scripts=['bin/neso'],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
