@@ -7,4 +7,6 @@ include CHANGELOG
 include setup.nsi
 include neso.desktop
 include *.nsh
+include share/pixmaps/neso/*.svg
 include share/pixmaps/neso/*.ico
+include share/pixmaps/neso/*.icns
