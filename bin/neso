@@ -6,6 +6,7 @@ import os
 import logging
 import time
 import threading
+import xmlrpclib
 
 import gobject
 
@@ -84,7 +85,7 @@ VERSION_DATA_DIR = os.path.join(DATA_DIR, VERSION.rsplit('.', 1)[0])
 if not os.path.isdir(VERSION_DATA_DIR):
     os.mkdir(VERSION_DATA_DIR, 0700)
 
-CONFIG.options['netrpc'] = False
+CONFIG.options['jsonrpc'] = False
 CONFIG.options['xmlrpc'] = False
 CONFIG.options['webdav'] = False
 CONFIG.options['db_type'] = 'sqlite'
@@ -103,87 +104,42 @@ from trytond.backend import Database
 
 import tryton.rpc as rpc
 
-def db_list(host, port):
-    Database._memory_database = None
-    return dispatch('127.0.0.1', 8070, 'local', None, None, None, 'common', 'db',
-            'list')
 
-rpc.db_list = db_list
+class LocalProxy(xmlrpclib.ServerProxy):
 
-def db_exec(host, port, method, *args):
-    Database._memory_database = None
-    args = ('127.0.0.1', 8070, 'local', None, None, None, 'common', 'db', method) \
-            + args
-    return dispatch(*args)
+    def __init__(self, host, port, database='', verbose=0,
+            fingerprints=None, ca_certs=None):
+        self.__host = host
+        self.__port = port
+        self.__database = database
+        self.__verbose = verbose
 
-rpc.db_exec = db_exec
+    def __request(self, methodname, params):
+        method_list = methodname.split('.')
+        object_type = method_list[0]
+        object_name = '.'.join(method_list[1:-1])
+        method = method_list[-1]
+        args = (self.__host, self.__port, 'local', self.__database, params[0],
+            params[1], object_type, object_name, method) + tuple(params[2:])
+        return dispatch(*args)
 
-def server_version(host, port):
-    return dispatch('127.0.0.1', 8070, 'local', None, None, None, 'common', None,
-            'version')
-rpc.server_version = server_version
+    def __repr__(self):
+        return "<LocalProxy for %s>" % self.__database
 
-def login(username, password, host, port, database):
-    res = dispatch('127.0.0.1', 8070, 'local', database, username, password,
-            'common', 'db', 'login')
-    if not res:
-        rpc._USER = 0
-        rpc._SESSION = ''
-        return -2
-    rpc._USER = res[0]
-    rpc._USERNAME = username
-    rpc._SESSION = res[1]
-    rpc._DATABASE = database
-    rpc.context_reload()
-    return 1
+    __str__ = __repr__
 
-rpc.login = login
+    def close(self):
+        pass
 
-def logout():
-    if rpc._SOCK and rpc._USER:
-        dispatch('127.0.0.1', 8070, 'local', rpc._DATABASE, rpc._USERNAME,
-                rpc._SESSION, 'common', 'db', 'logout')
-    rpc._USER = 0
-    rpc._USERNAME = ''
-    rpc._SESSION = ''
-    rpc._DATABASE = ''
-    rpc._VIEW_CACHE = {}
-    rpc.SECURE = False
+    @property
+    def ssl(self):
+        return False
 
-rpc.logout = logout
+    def __getattr__(self, name):
+        # Override to force to use LocalProxy.__request
+        return xmlrpclib._Method(self.__request, name)
 
-def _execute(blocking, *args):
-    logging.getLogger('rpc.request').info(repr((args)))
-    key = False
-    if len(args) >= 6 and args[1] == 'fields_view_get':
-        key = str(args)
-        if key in rpc._VIEW_CACHE and rpc._VIEW_CACHE[key][0]:
-            args = args[:]
-            args = args + (rpc._VIEW_CACHE[key][0],)
-    res = rpc._SEMAPHORE.acquire(blocking)
-    if not res:
-        return
-    try:
-        result = dispatch(*(('127.0.0.1', 8070, 'local', rpc._DATABASE,
-            rpc._USER, rpc._SESSION) + args))
-    finally:
-        rpc._SEMAPHORE.release()
-    if key:
-        if result is True and key in rpc._VIEW_CACHE:
-            result = rpc._VIEW_CACHE[key][1]
-        else:
-            rpc._VIEW_CACHE[key] = (result['md5'], result)
-    logging.getLogger('rpc.result').debug(repr(result))
-    return result
-
-rpc._execute = _execute
-
-class _SOCK(object):
-    hostname = 'localhost'
-    host = '127.0.0.1'
-    port = 8070
-
-rpc._SOCK = _SOCK()
+rpc.ServerProxy = LocalProxy
 
 CRON_RUNNING = True
 def cron():
@@ -207,48 +163,46 @@ thread.start()
 from tryton.config import CONFIG as CLIENT_CONFIG
 CLIENT_CONFIG.__setitem__('login.host', False, config=False)
 CLIENT_CONFIG.__setitem__('login.server', 'localhost', config=False)
-CLIENT_CONFIG.__setitem__('login.port', '8070', config=False)
+CLIENT_CONFIG.__setitem__('login.port', 8000, config=False)
 
 from tryton.gui.window.dbcreate import DBCreate
 _DBCreate_run = DBCreate.run
 
-def DBCreate_run(self, parent):
+def DBCreate_run(self):
     self.entry_serverpasswd.set_text('admin')
     self.event_show_button_create(self.dialog, None)
-    return _DBCreate_run(self, parent)
+    return _DBCreate_run(self)
 
 DBCreate.run = DBCreate_run
 
 from tryton.gui.window.dbdumpdrop import DBBackupDrop
 _DBBackupDrop_run = DBBackupDrop.run
 
-def DBBackupDrop_run(self, parent):
+def DBBackupDrop_run(self):
     self.entry_serverpasswd.set_text('admin')
-    self.entry_server_connection.set_text('127.0.0.1:8070')
-
-    liststore = gtk.ListStore(str)
-    self.combo_database.set_model(liststore)
-    self.refreshlist(None, self.combo_database, self.combo_database_label,
-        self.db_progressbar, '127.0.0.1', 8070)
     self.event_show_button_ok(self.dialog, None)
-    return _DBBackupDrop_run(self, parent)
+    self.button_ok.set_sensitive(True)
+    return _DBBackupDrop_run(self)
 
 DBBackupDrop.run = DBBackupDrop_run
 
 from tryton.gui.window.dbrestore import DBRestore
 _DBRestore_run = DBRestore.run
 
-def DBRestore_run(self, parent):
+def DBRestore_run(self):
     self.entry_server_password.set_text('admin')
     self.event_show_button_restore(self.dialog, None)
-    return _DBRestore_run(self, parent)
+    return _DBRestore_run(self)
 
 DBRestore.run = DBRestore_run
 
-from tryton.common import refresh_dblist
+from tryton.common import refresh_dblist, DBProgress
+import tryton.common as common
 from tryton.gui.window.dblogin import DBLogin
+from tryton.exceptions import TrytonError
 
-def DBLogin_run(self, parent):
+
+def DBLogin_run(self):
     self.combo_profile.destroy()
     self.profile_button.destroy()
     self.expander.destroy()
@@ -264,7 +218,7 @@ def DBLogin_run(self, parent):
     self.database_combo.pack_start(cell, True)
     self.database_combo.add_attribute(cell, 'text', 0)
 
-    dbs = refresh_dblist('127.0.0.1', '8070')
+    dbs = refresh_dblist('localhost', 8000)
     if dbs:
         current_db = CLIENT_CONFIG['login.db']
         for idx, dbname in enumerate(dbs):
@@ -276,8 +230,8 @@ def DBLogin_run(self, parent):
     else:
         dbname = None
         def db_create(button):
-            dia = DBCreate('127.0.0.1', 8070)
-            dbname = dia.run(self.dialog)
+            dia = DBCreate('localhost', 8000)
+            dbname = dia.run()
             button.hide()
             self.table_main.attach(self.database_combo, 1, 3, 1, 2,
                 xoptions=gtk.FILL)
@@ -303,16 +257,14 @@ def DBLogin_run(self, parent):
             db_name = dbstore[database][0]
             CLIENT_CONFIG['login.db'] = db_name
             result = (self.entry_login.get_text(),
-                self.entry_password.get_text(), '127.0.0.1', 8070, db_name)
+                self.entry_password.get_text(), 'localhost', 8000, db_name)
 
+    self.parent.present()
+    self.dialog.destroy()
     if res != gtk.RESPONSE_OK:
-        parent.present()
-        self.dialog.destroy()
         rpc.logout()
         from tryton.gui.main import Main
-        raise Exception('QueryCanceled')
-    parent.present()
-    self.dialog.destroy()
+        raise TrytonError('QueryCanceled')
     return result
 
 DBLogin.run = DBLogin_run
