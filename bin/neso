@@ -143,16 +143,21 @@ rpc.ServerProxy = LocalProxy
 
 CRON_RUNNING = True
 def cron():
+    threads = {}
     while CRON_RUNNING:
         for dbname in Pool.database_list():
+            thread = threads.get(dbname)
+            if thread and thread.is_alive():
+                continue
             pool = Pool(dbname)
             if 'ir.cron' not in pool.object_name_list():
                 continue
             cron_obj = pool.get('ir.cron')
             thread = threading.Thread(
-                    target=cron_obj.pool_jobs,
+                    target=cron_obj.run,
                     args=(dbname,), kwargs={})
             thread.start()
+            threads[dbname] = thread
         for i in xrange(60):
             time.sleep(1)
             if not CRON_RUNNING:
