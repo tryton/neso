@@ -7,6 +7,7 @@ import logging
 import time
 import threading
 import xmlrpclib
+import traceback
 
 import gobject
 
@@ -101,8 +102,11 @@ Pool.start()
 
 from trytond.protocols.dispatcher import dispatch
 from trytond.backend import Database
+from trytond.exceptions import UserError, UserWarning, NotLogged, \
+    ConcurrencyException
 
 import tryton.rpc as rpc
+from tryton.exceptions import TrytonServerError
 
 
 class LocalProxy(xmlrpclib.ServerProxy):
@@ -121,7 +125,22 @@ class LocalProxy(xmlrpclib.ServerProxy):
         method = method_list[-1]
         args = (self.__host, self.__port, 'local', self.__database, params[0],
             params[1], object_type, object_name, method) + tuple(params[2:])
-        return dispatch(*args)
+        try:
+            return dispatch(*args)
+        except (UserError, UserWarning, NotLogged,
+            ConcurrencyException), exception:
+            raise TrytonServerError(*exception.args)
+        except Exception:
+            tbs = ''
+            for line in traceback.format_exception(*sys.exc_info()):
+                try:
+                    line = line.encode('utf-8', 'ignore')
+                except Exception:
+                    continue
+                tb_s += line
+            for path in sys.path:
+                tb_s = tb_s.replace(path, '')
+            raise TrytonServerError(str(sys.exc_value), tb_s)
 
     def __repr__(self):
         return "<LocalProxy for %s>" % self.__database
