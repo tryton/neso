@@ -131,7 +131,7 @@ class LocalProxy(xmlrpclib.ServerProxy):
             ConcurrencyException), exception:
             raise TrytonServerError(*exception.args)
         except Exception:
-            tbs = ''
+            tb_s = ''
             for line in traceback.format_exception(*sys.exc_info()):
                 try:
                     line = line.encode('utf-8', 'ignore')
