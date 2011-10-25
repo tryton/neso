@@ -20,9 +20,6 @@ if os.name == 'nt':
         'script': os.path.join('bin', 'neso'),
         'icon_resources': [(1, os.path.join('share', 'pixmaps', 'neso', 'neso.ico'))],
     }]
-    json = ['json']
-    if sys.version_info < (2, 6):
-        json = ['simplejson']
     args['options'] = {
         'py2exe': {
             'optimize': 0,
@@ -51,7 +48,6 @@ if os.name == 'nt':
                 'pydoc',
                 'DAV',
                 'pydot',
-                'BeautifulSoup',
                 'vobject',
                 'pkg_resources',
                 'vatnumber',
@@ -59,17 +55,15 @@ if os.name == 'nt':
                 'email',
                 'contextlib',
                 'gio',
-            ] + json,
+                'simplejson',
+            ],
         }
     }
     args['zipfile'] = 'library.zip'
 
-    if sys.version_info < (2, 6):
-        data_files.append(('', ['msvp71.dll']))
-    else:
-        data_files.append(('', ['msvcr90.dll', 'msvcp90.dll', 'msvcm90.dll']))
-        manifest = read('Microsoft.VC90.CRT.manifest')
-        args['windows'][0]['other_resources'] = [(24, 1, manifest)]
+    data_files.append(('', ['msvcr90.dll', 'msvcp90.dll', 'msvcm90.dll']))
+    manifest = read('Microsoft.VC90.CRT.manifest')
+    args['windows'][0]['other_resources'] = [(24, 1, manifest)]
 
 elif os.name == 'mac' \
         or (hasattr(os, 'uname') and os.uname()[0] == 'Darwin'):
@@ -77,9 +71,6 @@ elif os.name == 'mac' \
     from modulegraph.find_modules import PY_SUFFIXES
     PY_SUFFIXES.append('')
     args['app'] = [os.path.join('bin', 'neso')]
-    json = 'json'
-    if sys.version_info < (2, 6):
-        json = 'simplejson'
     args['options'] = {
         'py2app': {
             'argv_emulation': True,
@@ -89,8 +80,7 @@ elif os.name == 'mac' \
                     'dateutil, psycopg2, zipfile, sqlite3, '
                     'csv, pydoc, pydot, BeautifulSoup, '
                     'vobject, vatnumber, suds, email, cPickle, sha, '
-                    'contextlib, gtk_osxapplication, ldap, '
-                    + json),
+                    'contextlib, gtk_osxapplication, ldap, simplejson'),
             'packages': ('xml, logging, lxml, genshi, DAV, pytz, email, '
                     'relatorio'),
             'excludes': 'tryton, trytond',
