@@ -114,6 +114,7 @@ dist = setup(name=PACKAGE,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: X11 Applications :: GTK',
+        'Framework :: Tryton',
         'Intended Audience :: End Users/Desktop',
         'License :: OSI Approved :: GNU General Public License (GPL)',
         'Operating System :: OS Independent',
