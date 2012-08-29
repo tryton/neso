@@ -46,7 +46,7 @@ if os.name == 'nt':
                 'csv',
                 'lxml',
                 'pydoc',
-                'DAV',
+                'pywebdav',
                 'pydot',
                 'vobject',
                 'pkg_resources',
@@ -56,6 +56,9 @@ if os.name == 'nt':
                 'contextlib',
                 'gio',
                 'simplejson',
+                'polib',
+                'SimpleXMLRPCServer',
+                'SimpleHTTPServer',
             ],
         }
     }
