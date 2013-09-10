@@ -10,6 +10,7 @@ Comment=Run Tryton
 Comment[ca_ES]=Inicia Tryton
 Comment[de]=Tryton starten
 Comment[es_ES]=Iniciar Tryton
+Keywords=Business;Management;Enterprise;ERP;Framework;
 Exec=neso
 Icon=neso-icon
 Terminal=false
