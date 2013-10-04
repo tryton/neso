@@ -3,7 +3,6 @@
 #this repository contains the full copyright notices and license terms.
 import sys
 import os
-import logging
 import time
 import threading
 import xmlrpclib
@@ -48,7 +47,7 @@ if os.name == 'mac' or \
         os.environ['GTK_IM_MODULE_FILE'] = immodules
 
 import gtk
-from neso.version import *
+from neso.version import VERSION
 
 for i in ('tryton', 'trytond'):
     try:
@@ -57,7 +56,7 @@ for i in ('tryton', 'trytond'):
         if os.path.isdir(DIR):
             sys.path.insert(0, os.path.dirname(DIR))
             continue
-    except: # Exception with py2exe
+    except:  # Exception with py2exe
         pass
     # try for py2exe
     DIR = os.path.join(os.path.abspath(os.path.normpath(
@@ -103,7 +102,6 @@ from trytond.pool import Pool
 Pool.start()
 
 from trytond.protocols.dispatcher import dispatch
-from trytond.backend import Database
 from trytond.exceptions import UserError, UserWarning, NotLogged, \
     ConcurrencyException
 
@@ -130,7 +128,7 @@ class LocalProxy(xmlrpclib.ServerProxy):
         try:
             return dispatch(*args)
         except (UserError, UserWarning, NotLogged,
-            ConcurrencyException), exception:
+                ConcurrencyException), exception:
             raise TrytonServerError(*exception.args)
         except Exception:
             tb_s = ''
@@ -163,6 +161,8 @@ class LocalProxy(xmlrpclib.ServerProxy):
 rpc.ServerProxy = LocalProxy
 
 CRON_RUNNING = True
+
+
 def cron():
     threads = {}
     while CRON_RUNNING:
@@ -194,6 +194,7 @@ CLIENT_CONFIG.__setitem__('login.port', 8000, config=False)
 from tryton.gui.window.dbcreate import DBCreate
 _DBCreate_run = DBCreate.run
 
+
 def DBCreate_run(self):
     self.entry_serverpasswd.set_text('admin')
     self.event_show_button_create(self.dialog, None)
@@ -203,6 +204,7 @@ DBCreate.run = DBCreate_run
 
 from tryton.gui.window.dbdumpdrop import DBBackupDrop
 _DBBackupDrop_run = DBBackupDrop.run
+
 
 def DBBackupDrop_run(self):
     self.entry_serverpasswd.set_text('admin')
@@ -215,6 +217,7 @@ DBBackupDrop.run = DBBackupDrop_run
 from tryton.gui.window.dbrestore import DBRestore
 _DBRestore_run = DBRestore.run
 
+
 def DBRestore_run(self):
     self.entry_server_password.set_text('admin')
     self.event_show_button_restore(self.dialog, None)
@@ -222,8 +225,7 @@ def DBRestore_run(self):
 
 DBRestore.run = DBRestore_run
 
-from tryton.common import refresh_dblist, DBProgress
-import tryton.common as common
+from tryton.common import refresh_dblist
 from tryton.gui.window.dblogin import DBLogin
 from tryton.exceptions import TrytonError
 
@@ -255,6 +257,7 @@ def DBLogin_run(self):
             xoptions=gtk.FILL)
     else:
         dbname = None
+
         def db_create(button):
             dia = DBCreate('localhost', 8000)
             dbname = dia.run()
@@ -263,7 +266,7 @@ def DBLogin_run(self):
                 xoptions=gtk.FILL)
             self.database_combo.show()
             dbstore.append((dbname,))
-            self.database_combo.set_active(len(dbstore)-1)
+            self.database_combo.set_active(len(dbstore) - 1)
         image = gtk.Image()
         image.set_from_stock('tryton-new', gtk.ICON_SIZE_BUTTON)
         create_button = gtk.Button(u'Create')
@@ -289,7 +292,6 @@ def DBLogin_run(self):
     self.dialog.destroy()
     if res != gtk.RESPONSE_OK:
         rpc.logout()
-        from tryton.gui.main import Main
         raise TrytonError('QueryCanceled')
     return result
 
