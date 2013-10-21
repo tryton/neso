@@ -85,6 +85,7 @@ if os.name == 'nt':
                 'polib',
                 'SimpleXMLRPCServer',
                 'SimpleHTTPServer',
+                'sql',
             ],
         }
     }
@@ -110,7 +111,7 @@ elif sys.platform == 'darwin':
                     'vobject, vatnumber, suds, email, cPickle, sha, '
                     'contextlib, gtk_osxapplication, ldap, simplejson'),
             'packages': ('xml, logging, lxml, genshi, DAV, pytz, email, '
-                    'relatorio'),
+                    'relatorio, sql'),
             'excludes': 'tryton, trytond',
             'frameworks': 'librsvg-2.2.dylib',
             'plist': {
