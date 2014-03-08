@@ -123,18 +123,39 @@ elif sys.platform == 'darwin':
         },
     }
 
+
+def get_require_version(name):
+    if minor_version % 2:
+        require = '%s >= %s.%s.dev0, < %s.%s'
+    else:
+        require = '%s >= %s.%s, < %s.%s'
+    require %= (name, major_version, minor_version,
+        major_version, minor_version + 1)
+    return require
+
+PACKAGE, VERSION, LICENSE, WEBSITE = None, None, None, None
 execfile(os.path.join('neso', 'version.py'))
-major_version, minor_version, _ = VERSION.split('.', 2)
+version = VERSION
+major_version, minor_version, _ = version.split('.', 2)
 major_version = int(major_version)
 minor_version = int(minor_version)
 
+download_url = 'http://downloads.tryton.org/%s.%s/' % (
+    major_version, minor_version)
+if minor_version % 2:
+    version = '%s.%s.dev0' % (major_version, minor_version)
+    download_url = 'hg+http://hg.tryton.org/%s#egg=%s-%s' % (
+        PACKAGE, PACKAGE, version)
+
 dist = setup(name=PACKAGE,
-    version=VERSION,
+    version=version,
     description='Standalone Client/Server for the Tryton Application Platform',
+    long_description=read('README'),
     author='Tryton',
+    author_email='issue_tracker@tryton.org',
     url=WEBSITE,
-    download_url=('http://downloads.tryton.org/' +
-        VERSION.rsplit('.', 1)[0] + '/'),
+    download_url=download_url,
+    keywords='business application ERP',
     packages=find_packages(),
     data_files=data_files,
     scripts=['bin/neso'],
@@ -160,13 +181,13 @@ dist = setup(name=PACKAGE,
         'Programming Language :: Python :: 2.7',
         'Topic :: Office/Business',
         ],
+    platforms='any',
     license='GPL-3',
     install_requires=[
-        'tryton >= %s.%s, < %s.%s' % (major_version, minor_version,
-            major_version, minor_version),
-        'trytond >= %s.%s, < %s.%s' % (major_version, minor_version,
-            major_version, minor_version + 1),
-    ],
+        get_require_version('tryton'),
+        get_require_version('trytond'),
+        ],
+    zip_safe=False,
     **args
     )
 
