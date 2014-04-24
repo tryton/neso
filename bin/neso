@@ -7,6 +7,8 @@ import time
 import threading
 import xmlrpclib
 import traceback
+from functools import partial
+from contextlib import contextmanager
 
 import gobject
 
@@ -159,6 +161,49 @@ class LocalProxy(xmlrpclib.ServerProxy):
         return xmlrpclib._Method(self.__request, name)
 
 rpc.ServerProxy = LocalProxy
+
+
+# TODO: replace LocalPool by ServerPool using a parameter for ServerProxy
+class LocalPool(object):
+
+    def __init__(self, *args, **kwargs):
+        self.LocalProxy = partial(LocalProxy, *args, **kwargs)
+        self._lock = threading.Lock()
+        self._pool = []
+        self._used = {}
+
+    def getconn(self):
+        with self._lock:
+            if self._pool:
+                conn = self._pool.pop()
+            else:
+                conn = self.LocalProxy()
+            self._used[id(conn)] = conn
+            return conn
+
+    def putconn(self, conn):
+        with self._lock:
+            self._pool.append(conn)
+            del self._used[id(conn)]
+
+    def close(self):
+        with self._lock:
+            for conn in self._pool + self._used.values():
+                conn.close()
+
+    @property
+    def ssl(self):
+        for conn in self._pool + self._used.values():
+            return conn.ssl
+        return False
+
+    @contextmanager
+    def __call__(self):
+        conn = self.getconn()
+        yield conn
+        self.putconn(conn)
+
+rpc.ServerPool = LocalPool
 
 CRON_RUNNING = True
 
