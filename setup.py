@@ -86,6 +86,7 @@ if os.name == 'nt':
                 'SimpleXMLRPCServer',
                 'SimpleHTTPServer',
                 'sql',
+                'stdnum',
             ],
         }
     }
@@ -111,7 +112,7 @@ elif sys.platform == 'darwin':
                     'vobject, vatnumber, suds, email, cPickle, sha, '
                     'contextlib, gtk_osxapplication, ldap, simplejson'),
             'packages': ('xml, logging, lxml, genshi, DAV, pytz, email, '
-                    'relatorio, sql'),
+                    'relatorio, sql', 'stdnum'),
             'excludes': 'tryton, trytond',
             'frameworks': 'librsvg-2.2.dylib',
             'plist': {
@@ -258,6 +259,7 @@ if os.name == 'nt':
     if 'py2exe' in dist.commands:
         import shutil
         import pytz
+        import stdnum
         import zipfile
 
         gtk_dir = find_gtk_dir()
@@ -270,6 +272,13 @@ if os.name == 'nt':
                 pytz.__file__.endswith('__init__.py')), pytz.__file__
         zoneinfo_dir = os.path.join(os.path.dirname(pytz.__file__), 'zoneinfo')
         disk_basedir = os.path.dirname(os.path.dirname(pytz.__file__))
+
+        # stdnum installs dat files in the same directory
+        # Make sure the layout of stdnum hasn't changed
+        assert (stdnum.__file__.endswith('__init__.pyc') or
+                stdnum.__file__.endswith('__init__.py')), stdnum.__file__
+        dat_dir = os.path.join(os.path.dirname(stdnum.__file__))
+
         zipfile_path = os.path.join(dist_dir, 'library.zip')
         z = zipfile.ZipFile(zipfile_path, 'a')
         for absdir, directories, filenames in os.walk(zoneinfo_dir):
@@ -277,6 +286,10 @@ if os.name == 'nt':
             zip_dir = absdir[len(disk_basedir):]
             for f in filenames:
                 z.write(os.path.join(absdir, f), os.path.join(zip_dir, f))
+        for f in os.listdir(dat_dir):
+            if f.endswith('.dat'):
+                z.write(os.path.join(dat_dir, f),
+                    os.path.join(os.path.basename(dat_dir), f))
         z.close()
 
         copy_trytons(dist_dir)
