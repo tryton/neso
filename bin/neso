@@ -75,7 +75,7 @@ for i in ('tryton', 'trytond'):
 import tryton.client
 TrytonClient = tryton.client.TrytonClient()
 
-from trytond.config import CONFIG
+from trytond.config import config
 from tryton.config import get_home_dir
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.normpath(
@@ -89,11 +89,7 @@ VERSION_DATA_DIR = os.path.join(DATA_DIR, VERSION.rsplit('.', 1)[0])
 if not os.path.isdir(VERSION_DATA_DIR):
     os.mkdir(VERSION_DATA_DIR, 0700)
 
-CONFIG.options['jsonrpc'] = False
-CONFIG.options['xmlrpc'] = False
-CONFIG.options['webdav'] = False
-CONFIG.options['db_type'] = 'sqlite'
-CONFIG.options['data_path'] = VERSION_DATA_DIR
+config.set('database', 'path', VERSION_DATA_DIR)
 
 for mod in sys.modules.keys():
     if mod.startswith('trytond.') \
@@ -102,6 +98,10 @@ for mod in sys.modules.keys():
 
 from trytond.pool import Pool
 Pool.start()
+
+from trytond import security
+
+security.check_super = lambda *a: True
 
 from trytond.protocols.dispatcher import dispatch
 from trytond.exceptions import UserError, UserWarning, NotLogged, \
