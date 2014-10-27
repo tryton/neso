@@ -64,6 +64,7 @@ if os.name == 'nt':
                 'xml',
                 'decimal',
                 'dateutil',
+                'logging.config',
                 'logging.handlers',
                 'psycopg2',
                 'zipfile',
@@ -87,6 +88,7 @@ if os.name == 'nt':
                 'SimpleHTTPServer',
                 'sql',
                 'stdnum',
+                'site',
             ],
         }
     }
