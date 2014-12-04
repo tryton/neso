@@ -116,7 +116,7 @@ elif sys.platform == 'darwin':
             'packages': ('xml, logging, lxml, genshi, DAV, pytz, email, '
                     'relatorio, sql', 'stdnum'),
             'excludes': 'tryton, trytond',
-            'frameworks': 'librsvg-2.2.dylib',
+            'frameworks': 'librsvg-2.2.dylib, libjpeg.8.dylib, libtiff.3.dylib',
             'plist': {
                 'CFBundleIdentifier': 'org.tryton.neso',
                 'CFBundleName': 'Neso',
