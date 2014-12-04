@@ -90,6 +90,7 @@ if os.name == 'nt':
                 'stdnum',
                 'site',
             ],
+            'excludes': ['Tkconstants', 'Tkinter', 'tcl'],
         }
     }
     args['zipfile'] = 'library.zip'
