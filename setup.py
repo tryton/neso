@@ -138,27 +138,31 @@ def get_require_version(name):
         major_version, minor_version + 1)
     return require
 
-PACKAGE, VERSION, LICENSE, WEBSITE = None, None, None, None
-execfile(os.path.join('neso', 'version.py'))
-version = VERSION
+
+def get_version():
+    init = read(os.path.join('neso', '__init__.py'))
+    return re.search('__version__ = "([0-9.]*)"', init).group(1)
+
+version = get_version()
 major_version, minor_version, _ = version.split('.', 2)
 major_version = int(major_version)
 minor_version = int(minor_version)
+name = 'neso'
 
 download_url = 'http://downloads.tryton.org/%s.%s/' % (
     major_version, minor_version)
 if minor_version % 2:
     version = '%s.%s.dev0' % (major_version, minor_version)
     download_url = 'hg+http://hg.tryton.org/%s#egg=%s-%s' % (
-        PACKAGE, PACKAGE, version)
+        name, name, version)
 
-dist = setup(name=PACKAGE,
+dist = setup(name=name,
     version=version,
     description='Standalone Client/Server for the Tryton Application Platform',
     long_description=read('README'),
     author='Tryton',
     author_email='issue_tracker@tryton.org',
-    url=WEBSITE,
+    url='http://www.tryton.org/',
     download_url=download_url,
     keywords='business application ERP',
     packages=find_packages(),
@@ -341,7 +345,7 @@ if os.name == 'nt':
         makensis = find_makensis()
         if makensis:
             from subprocess import Popen
-            Popen([makensis, "/DVERSION=" + VERSION,
+            Popen([makensis, "/DVERSION=" + version,
                 str(os.path.join(os.path.dirname(__file__),
                     'setup.nsi'))]).wait()
         else:
@@ -472,9 +476,9 @@ elif sys.platform == 'darwin':
             shutil.copyfile(os.path.join(os.path.dirname(__file__), file),
                 os.path.join(dist_dir, file + '.txt'))
 
-        dmg_file = os.path.join(os.path.dirname(__file__), 'neso-' + VERSION
+        dmg_file = os.path.join(os.path.dirname(__file__), 'neso-' + version
                 + '.dmg')
         if os.path.isfile(dmg_file):
             os.remove(dmg_file)
         Popen(['hdiutil', 'create', dmg_file, '-volname', 'Neso '
-                + VERSION, '-fs', 'HFS+', '-srcfolder', dist_dir]).wait()
+                + version, '-fs', 'HFS+', '-srcfolder', dist_dir]).wait()
