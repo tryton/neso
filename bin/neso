@@ -73,7 +73,6 @@ for i in ('tryton', 'trytond'):
         sys.path.insert(0, os.path.dirname(DIR))
 
 import tryton.client
-TrytonClient = tryton.client.TrytonClient()
 
 from trytond.config import config
 from tryton.config import get_home_dir
@@ -342,7 +341,13 @@ def DBLogin_run(self):
 
 DBLogin.run = DBLogin_run
 
-TrytonClient.run()
-CRON_RUNNING = False
-thread.join()
-sys.exit(0)
+
+class NesoClient(tryton.client.TrytonClient):
+    @classmethod
+    def sig_quit(cls, *args, **kwargs):
+        global CRON_RUNNING
+        CRON_RUNNING = False
+        thread.join()
+        super(NesoClient, cls).sig_quit(*args, **kwargs)
+
+NesoClient().run()
