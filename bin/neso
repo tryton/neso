@@ -343,11 +343,11 @@ DBLogin.run = DBLogin_run
 
 
 class NesoClient(tryton.client.TrytonClient):
-    @classmethod
-    def sig_quit(cls, *args, **kwargs):
+
+    def quit_mainloop(self):
         global CRON_RUNNING
         CRON_RUNNING = False
         thread.join()
-        super(NesoClient, cls).sig_quit(*args, **kwargs)
+        super(NesoClient, self).quit_mainloop()
 
 NesoClient().run()
