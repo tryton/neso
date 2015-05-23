@@ -215,9 +215,15 @@ def cron():
             if thread and thread.is_alive():
                 continue
             pool = Pool(dbname)
-            if 'ir.cron' not in pool.object_name_list():
+            if not pool.local.acquire(0):
                 continue
-            Cron = pool.get('ir.cron')
+            try:
+                try:
+                    Cron = pool.get('ir.cron')
+                except KeyError:
+                    continue
+            finally:
+                pool.lock.release()
             thread = threading.Thread(
                     target=Cron.run,
                     args=(dbname,), kwargs={})
