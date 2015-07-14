@@ -70,7 +70,6 @@ if os.name == 'nt':
                 'dateutil',
                 'logging.config',
                 'logging.handlers',
-                'psycopg2',
                 'zipfile',
                 'sqlite3',
                 'relatorio',
@@ -93,6 +92,10 @@ if os.name == 'nt':
                 'sql',
                 'stdnum',
                 'site',
+                'colorsys',
+                'uuid',
+                'simpleeval',
+                'cached_property',
             ],
             'dll_excludes': ['dnsapi.dll', 'usp10.dll', 'iphlpapi.dll'],
             'excludes': ['Tkconstants', 'Tkinter', 'tcl'],
@@ -115,7 +118,7 @@ elif sys.platform == 'darwin':
             'includes': ('pygtk, gtk, glib, cairo, pango, pangocairo, atk, '
                     'gobject, gio, gtk.keysyms, pkg_resources, ConfigParser, '
                     'xmlrpclib, decimal, uuid, '
-                    'dateutil, psycopg2, zipfile, sqlite3, '
+                    'dateutil, zipfile, sqlite3, '
                     'csv, pydoc, pydot, '
                     'vobject, vatnumber, suds, email, cPickle, sha, '
                     'contextlib, gtk_osxapplication, ldap, simplejson'),
