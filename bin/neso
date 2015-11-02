@@ -75,13 +75,16 @@ for i in ('tryton', 'trytond'):
 import tryton.client
 
 from trytond.config import config
-from tryton.config import get_home_dir
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.normpath(
     os.path.dirname(sys.argv[0]))), '.neso')
 if not os.path.isdir(DATA_DIR):
-    DATA_DIR = os.path.join(unicode(get_home_dir(),
-        sys.getfilesystemencoding()), '.neso')
+    if os.name == 'nt':
+        HOME = os.path.join(os.environ['HOMEDRIVE'], os.environ['HOMEPATH']
+            ).decode(sys.getfilesystemencoding())
+    else:
+        HOME = os.environ['HOME']
+    DATA_DIR = os.path.join(HOME, '.neso')
     if not os.path.isdir(DATA_DIR):
         os.mkdir(DATA_DIR, 0700)
 VERSION_DATA_DIR = os.path.join(DATA_DIR, __version__.rsplit('.', 1)[0])
