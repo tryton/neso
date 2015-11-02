@@ -215,7 +215,7 @@ def cron():
             if thread and thread.is_alive():
                 continue
             pool = Pool(dbname)
-            if not pool.local.acquire(0):
+            if not pool.lock.acquire(0):
                 continue
             try:
                 try:
