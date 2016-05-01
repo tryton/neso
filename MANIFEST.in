@@ -5,6 +5,7 @@ include INSTALL
 include TODO
 include CHANGELOG
 include setup.nsi
+include Microsoft.VC90.CRT.manifest
 include neso.desktop
 include *.nsh
 include share/pixmaps/neso/*.svg
