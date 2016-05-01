@@ -13,33 +13,6 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 args = {}
-
-languages = (
-    'bg_BG',
-    'ca_ES',
-    'cs_CZ',
-    'de_DE',
-    'es_AR',
-    'es_CO',
-    'es_EC',
-    'es_ES',
-    'es_MX',
-    'fr_FR',
-    'it_IT',
-    'ja_JP',
-    'lt_LT',
-    'nl_NL',
-    'pt_BR',
-    'ru_RU',
-    'sl_SI',
-    )
-
-
-def all_languages():
-    for lang in languages:
-        yield lang
-        yield lang.split('_')[0]
-
 data_files = []
 
 if os.name == 'nt':
@@ -337,12 +310,10 @@ if os.name == 'nt':
             if os.path.isfile(file):
                 shutil.copy(file, dist_dir)
 
-        for lang in all_languages():
-            if os.path.isdir(os.path.join(dist_dir, 'share', 'locale', lang)):
-                shutil.rmtree(os.path.join(dist_dir, 'share', 'locale', lang))
-            if os.path.isdir(os.path.join(gtk_dir, 'share', 'locale', lang)):
-                shutil.copytree(os.path.join(gtk_dir, 'share', 'locale', lang),
-                    os.path.join(dist_dir, 'share', 'locale', lang))
+        if os.path.isdir(os.path.join(dist_dir, 'share', 'locale')):
+            shutil.rmtree(os.path.join(dist_dir, 'share', 'locale'))
+        shutil.copytree(os.path.join(gtk_dir, 'share', 'locale'),
+            os.path.join(dist_dir, 'share', 'locale'))
 
         if os.path.isdir(os.path.join(dist_dir, 'share', 'themes',
                     'MS-Windows')):
@@ -453,14 +424,10 @@ elif sys.platform == 'darwin':
         shutil.copy(os.path.join(gtk_dir, 'share', 'themes', 'Clearlooks',
             'gtk-2.0', 'gtkrc'), os.path.join(resources_dir, 'gtkrc'))
 
-        for lang in all_languages():
-            if os.path.isdir(os.path.join(resources_dir, 'share', 'locale',
-                        lang)):
-                shutil.rmtree(os.path.join(resources_dir, 'share', 'locale',
-                        lang))
-            if os.path.isdir(os.path.join(gtk_dir, 'share', 'locale', lang)):
-                shutil.copytree(os.path.join(gtk_dir, 'share', 'locale', lang),
-                    os.path.join(resources_dir, 'share', 'locale', lang))
+        if os.path.isdir(os.path.join(resources_dir, 'share', 'locale')):
+            shutil.rmtree(os.path.join(resources_dir, 'share', 'locale'))
+        shutil.copytree(os.path.join(gtk_dir, 'share', 'locale'),
+            os.path.join(resources_dir, 'share', 'locale'))
 
         # fix pathes within shared libraries
         for library in chain(
